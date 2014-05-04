@@ -1,0 +1,18 @@
+body {
+  background: #ccc;
+  font-family: 'Tahoma';
+}
+
+#main {
+  background: white;
+  border: 1px solid #999;
+  margin: 20px auto;
+  min-height: 600px;
+  padding: 20px;
+  width: 900px;
+}
+
+#main h1 {
+  font-size: 30px;
+  margin-top: 0px;
+}
