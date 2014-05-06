@@ -2,25 +2,25 @@
     var Pylon = root.Pylon = root.Pylon || function () {};
 
     Pylon.begets = function (children) {
+        var self = this;
         for (var child in children) {
-            var self = this;
-                Surrogate = function () {},
-                self[child] = function () {};
-            Surrogate.prototype = this.prototype;
-            self[child].prototype = new Surrogate();
+            self[child] = function () {};
+            self[child].prototype = Object.create(self.prototype);
             self[child].begets = this.begets.bind(self[child]);
             self[child].create = this.create.bind(self[child]);
             self[child].group = children[child].group || Pylon.createGroup();
 
             if (children[child].context) {
+                children[child].context.frameCount = children[child].context.frameCount || 0;
                 children[child].context.layers = children[child].context.layers || [];
                 children[child].context.startAnimation = function () {
                     var canvas = children[child].context.canvas;
                     children[child].context.interval = window.setInterval(function () {
                         children[child].context.clearRect(0, 0, canvas.width, canvas.height);
                         for (var layer in children[child].context.layers) {
-                            children[child].context.layers[layer]();
+                            children[child].context.layers[layer](children[child].context.frameCount);
                         }
+                        children[child].context.frameCount++;
                     }, 33);
                 }
 
@@ -37,19 +37,17 @@
     }
 
     Pylon.create = function (options) {
-        var thing = function () {},
-            newThing; 
-        thing.prototype = new this;
-        newThing = new thing();
+        var thing = this,
+            newThing = new thing; 
+            newThing.attrs = {};
         for (var prop in options) {
             if (typeof(options[prop]) === "function") {
-                // newThing.set(prop, options[prop].bind(newThing));
+                newThing.set(prop, options[prop].bind(newThing));
                 newThing[prop] = options[prop].bind(newThing);
             } else {
-                // newThing.set(prop, options[prop]);
+                newThing.set(prop, options[prop]);
                 newThing[prop] = options[prop];
             }
-
         }
         this.group.things.push(newThing);
         return newThing;
@@ -66,16 +64,15 @@
     
     Pylon.prototype = {
         animate: function () {
-            if (this.context && this.draw) {
-                this.context.layers.push(this.draw);
+            if (this.context && this.get('draw')) {
+                this.context.layers.push(this.get('draw'));
             }
         },
-        attributes: {},
         get: function (attr) {
-            return this.attributes[attr];
+            return this.attrs[attr];
         },
         set: function (attr, val) {
-            this.attributes[attr] = val;
+            this.attrs[attr] = val;
         },
         name: "default",
         render: function () {},
@@ -92,15 +89,17 @@ $(document).ready(function () {
     });
     
     animal1 = NA.Animal.create({
-        draw: function () {
+        draw: function (frameCount) {
+            console.log(frameCount);
             this.context.fillStyle = "#ff0000"
-            var x = Math.random() * 500;
-            this.context.fillRect(0,0,x,x);
+            this.x = (frameCount % 30 === 0 ) ? Math.random() * 500 : this.x;
+            this.context.fillRect(0,0,this.x,this.x);
         },
-        name: "thing1"
+        name: "thing1",
+        x: 200
     })
     animal2 = NA.Animal.create({
-        draw: function () {
+        draw: function (frameCount) {
             this.context.fillStyle = "#000000"
             var x = Math.random() * 500;
             this.context.fillRect(0,0,x,x);
